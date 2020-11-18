@@ -25,7 +25,7 @@ let calc_center = function(nodes) {
 
 // 计算每个节点的加速度。
 // use_old代表nodes上有没有前一时间步的座标，没有的话不会计算阻力，因为我们的模拟没有计算每一步的速度，因此速度是用座标差除以时间步长度硬算出来的，可能要修改模拟的实现来直接提供速度。
-let calc_acceleration = function(nodes, links, use_old) {
+let calc_acceleration = function(nodes, links, nodes_dict, use_old) {
     // nodes[i].Fx和nodes[i].Fy分别代表受力在x, y方向的分量
     for (i in nodes) {
         nodes[i].Fx = 0;
@@ -93,7 +93,7 @@ async function graph_layout_algorithm(nodes, links, nodes_dict, f) {
     await f();
 
     // x_1
-    calc_acceleration(nodes, links, false);
+    calc_acceleration(nodes, links, nodes_dict, false);
     for (i in nodes) {
         nodes[i].old_x = nodes[i].x;
         nodes[i].old_y = nodes[i].y;
@@ -104,7 +104,7 @@ async function graph_layout_algorithm(nodes, links, nodes_dict, f) {
     
     // x_other
     for (k = 0; k < 10000; k++) {
-        calc_acceleration(nodes, links, true);
+        calc_acceleration(nodes, links, nodes_dict, true);
         for (i in nodes) {
             let new_x = 2 * nodes[i].x - nodes[i].old_x + nodes[i].ax * delta_t * delta_t;
             let new_y = 2 * nodes[i].y - nodes[i].old_y + nodes[i].ay * delta_t * delta_t;
