@@ -30,26 +30,29 @@ let calc_center = function(nodes) {
 // use_old代表nodes上有没有前一时间步的座标，没有的话不会计算阻力，因为我们的模拟没有计算每一步的速度，因此速度是用座标差除以时间步长度硬算出来的，可能要修改模拟的实现来直接提供速度。
 let calc_acceleration = function(nodes, links, nodes_dict, use_old) {
     // nodes[i].Fx和nodes[i].Fy分别代表受力在x, y方向的分量
-    for (i in nodes) {
+    const len = nodes.length;
+    for (let i = 0; i < len; ++i) {
         nodes[i].Fx = 0;
         nodes[i].Fy = 0;
     }
 
     // 计算库伦力
-    for (i in nodes) {
-        for (j in nodes) {
-            if (i == j) continue;
+    for (let i = 0; i < len; ++i) {
+        for (let j = i + 1; j < len; ++j) {
             let dx = nodes[j].x - nodes[i].x;
             let dy = nodes[j].y - nodes[i].y;
             let d = Math.hypot(dx, dy);
             let F = k_Coulomb * nodes[i].weight * nodes[j].weight / (d * d);
             nodes[i].Fx += F * dx / d;
+            nodes[j].Fx += -F * dx / d;
             nodes[i].Fy += F * dy / d;
+            nodes[j].Fy += -F * dy / d;
         }
     }
 
     // 计算弹簧弹力
-    for (l in links) {
+    const len_links = links.length;
+    for (let l = 0; l < len_links; ++l) {
         if (links[l].source == links[l].target) continue;
         let src = nodes_dict[links[l].source];
         let tgt = nodes_dict[links[l].target];
@@ -64,21 +67,21 @@ let calc_acceleration = function(nodes, links, nodes_dict, use_old) {
     }
 
     // 计算纵向力
-    for (i in nodes) {
+    for (let i = 0; i < len; ++i) {
         let dis = nodes[i].y - central_line;
         nodes[i].Fy += k_middle * nodes[i].weight * dis;
     }
 
     if (use_old) {
         // 计算阻力
-        for (i in nodes) {
+        for (let i = 0; i < len; ++i) {
             nodes[i].Fx += mu * (nodes[i].x - nodes[i].old_x) / delta_t;
             nodes[i].Fy += mu * (nodes[i].y - nodes[i].old_y) / delta_t;
         }
     }
 
     // 计算加速度
-    for (i in nodes) {
+    for (let i = 0; i < len; ++i) {
         nodes[i].ax = nodes[i].Fx / nodes[i].weight;
         nodes[i].ay = nodes[i].Fy / nodes[i].weight;
     }
