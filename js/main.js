@@ -6,9 +6,9 @@ let height = _height;
 let data = null;
 let data_file = './data/data.json';
 
-let k_Coulomb = -25; // 库伦力常数，符号影响排斥/吸引，负数是排斥
+let k_Coulomb = -0.06; // 库伦力常数，符号影响排斥/吸引，负数是排斥
 let k_Hooke = 0.005; // 弹簧弹力常数，正数是弹簧拉长时吸引，弹簧实际使用时会乘上学校间共享的人数
-let d_Hooke = 50; // 弹簧的标准长度 现在是所有弹簧的标准长度均如此，与弹簧的强度等等无关
+let d_Hooke = 100; // 弹簧的标准长度 现在是所有弹簧的标准长度均如此，与弹簧的强度等等无关
 let k_middle = -0.001; // 一个纵向的力，使长轴与屏幕的长边平行
 let central_line = 0.5 * height;
 let mu = -0.5; // 阻力与速度的比值
@@ -41,12 +41,12 @@ let calc_acceleration = function(nodes, links, nodes_dict, use_old) {
         for (let j = i + 1; j < len; ++j) {
             let dx = nodes[j].x - nodes[i].x;
             let dy = nodes[j].y - nodes[i].y;
-            let d = Math.hypot(dx, dy);
-            let F = k_Coulomb * nodes[i].weight * nodes[j].weight / (d * d);
-            nodes[i].Fx += F * dx / d;
-            nodes[j].Fx += -F * dx / d;
-            nodes[i].Fy += F * dy / d;
-            nodes[j].Fy += -F * dy / d;
+            let d = dx * dx + dy * dy;
+            let F = k_Coulomb * nodes[i].weight * nodes[j].weight / d;
+            nodes[i].Fx += F * dx;
+            nodes[j].Fx += -F * dx;
+            nodes[i].Fy += F * dy;
+            nodes[j].Fy += -F * dy;
         }
     }
 
@@ -141,7 +141,7 @@ async function graph_layout_algorithm(nodes, links, nodes_dict, f) {
                 nodes[i].x = new_x;
                 nodes[i].y = new_y;
             }
-            await f();
+            //await f();
         }
     }
 
