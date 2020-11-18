@@ -124,7 +124,7 @@ async function graph_layout_algorithm(nodes, links, nodes_dict, f) {
             calc_acceleration(nodes, links, nodes_dict, true);
             for (i in nodes) {
                 let new_x = 2 * nodes[i].x - nodes[i].old_x + nodes[i].ax * delta_t * delta_t;
-                let new_y = 2 * nodes[i].y - nodes[i].old_x + nodes[i].ay * delta_t * delta_t;
+                let new_y = 2 * nodes[i].y - nodes[i].old_y + nodes[i].ay * delta_t * delta_t;
                 nodes[i].old_x = nodes[i].x;
                 nodes[i].old_y = nodes[i].y;
                 nodes[i].x = new_x;
