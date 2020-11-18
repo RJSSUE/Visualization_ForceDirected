@@ -98,8 +98,13 @@ async function graph_layout_algorithm(nodes, links, nodes_dict, f) {
     // Verlet integration
     // 随机初始化 x_0
     for (i in nodes) {
-        nodes[i].x = Math.random() * 0.6 * width + 0.2 * width;
-        nodes[i].y = Math.random() * 0.6 * height + 0.2 * height;
+        if (nodes[i].weight >= 10) {
+            nodes[i].x = Math.random() * 0.6 * width + 0.2 * width;
+            nodes[i].y = Math.random() * 0.4 * height + 0.3 * height;
+        } else {
+            nodes[i].x = Math.random() * 0.6 * width + 0.2 * width;
+            nodes[i].y = (Math.random() > 0.5 ? 0.8 : 0.2) * height;
+        }
     }
 
     await f();
