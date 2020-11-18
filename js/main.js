@@ -10,7 +10,8 @@ let k_Coulomb = -10; // 库伦力常数，符号影响排斥/吸引，负数是�
 let k_Hooke = 0.005; // 弹簧弹力常数，正数是弹簧拉长时吸引，弹簧实际使用时会乘上学校间共享的人数
 let d_Hooke = 50; // 弹簧的标准长度 现在是所有弹簧的标准长度均如此，与弹簧的强度等等无关
 let mu = -0.5; // 阻力与速度的比值
-let delta_t = 0.1; // 模拟的时间步的长度，调大会使模拟变快，但可能会导致不精准
+let initial_delta_t = 0.3, delta_t = 0.1; // 模拟的时间步的长度，调大会使模拟变快，但可能会导致不精准
+// 注意实际采用的delta_t会变化，具体可搜索"delta_t = "来找到对应语句
 
 // 计算质心
 let calc_center = function(nodes) {
@@ -92,28 +93,45 @@ async function graph_layout_algorithm(nodes, links, nodes_dict, f) {
 
     await f();
 
-    // x_1
-    calc_acceleration(nodes, links, nodes_dict, false);
-    for (i in nodes) {
-        nodes[i].old_x = nodes[i].x;
-        nodes[i].old_y = nodes[i].y;
-        nodes[i].x += nodes[i].ax * delta_t * delta_t / 2;
-        nodes[i].y += nodes[i].ay * delta_t * delta_t / 2;
-    }
-    await f();
-    
-    // x_other
-    for (k = 0; k < 10000; k++) {
-        calc_acceleration(nodes, links, nodes_dict, true);
+    for (k = 0; k < 62; ++k) {
+        delta_t = Math.log2(k+2) * initial_delta_t; // 逐渐调大时间步以加速收敛
+        let borders = {'left': 0.1*width, 'right': 0.9 * width, 'top': 0.1 * height, 'bottom': 0.9 * height};
         for (i in nodes) {
-            let new_x = 2 * nodes[i].x - nodes[i].old_x + nodes[i].ax * delta_t * delta_t;
-            let new_y = 2 * nodes[i].y - nodes[i].old_y + nodes[i].ay * delta_t * delta_t;
+            let check = function(getter, setter, border, less) {
+                if (less) {
+                    if (getter(nodes[i]) < border) setter(nodes[i], (getter(nodes[i]) - border) * 0.1 + border);
+                } else {
+                    if (getter(nodes[i]) > border) setter(nodes[i], (getter(nodes[i]) - border) * 0.1 + border);
+                }
+            };
+            check((n) => n.x, (n, x) => n.x = x, borders.left, true);
+            check((n) => n.x, (n, x) => n.x = x, borders.right, false);
+            check((n) => n.y, (n, x) => n.y = x, borders.top, true);
+            check((n) => n.y, (n, x) => n.y = x, borders.bottom, false);
+        }
+        // x_1
+        calc_acceleration(nodes, links, nodes_dict, false);
+        for (i in nodes) {
             nodes[i].old_x = nodes[i].x;
             nodes[i].old_y = nodes[i].y;
-            nodes[i].x = new_x;
-            nodes[i].y = new_y;
+            nodes[i].x += nodes[i].ax * delta_t * delta_t / 2;
+            nodes[i].y += nodes[i].ay * delta_t * delta_t / 2;
         }
         await f();
+        
+        // x_other
+        for (k2 = 0; k2 < 100; k2++) {
+            calc_acceleration(nodes, links, nodes_dict, true);
+            for (i in nodes) {
+                let new_x = 2 * nodes[i].x - nodes[i].old_x + nodes[i].ax * delta_t * delta_t;
+                let new_y = 2 * nodes[i].y - nodes[i].old_x + nodes[i].ay * delta_t * delta_t;
+                nodes[i].old_x = nodes[i].x;
+                nodes[i].old_y = nodes[i].y;
+                nodes[i].x = new_x;
+                nodes[i].y = new_y;
+            }
+            await f();
+        }
     }
 
     // 算法结束时间
