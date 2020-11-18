@@ -6,7 +6,7 @@ let height = _height;
 let data = null;
 let data_file = './data/data.json';
 
-let k_Coulomb = -10; // 库伦力常数，符号影响排斥/吸引，负数是排斥
+let k_Coulomb = -25; // 库伦力常数，符号影响排斥/吸引，负数是排斥
 let k_Hooke = 0.005; // 弹簧弹力常数，正数是弹簧拉长时吸引，弹簧实际使用时会乘上学校间共享的人数
 let d_Hooke = 50; // 弹簧的标准长度 现在是所有弹簧的标准长度均如此，与弹簧的强度等等无关
 let k_middle = -0.001; // 一个纵向的力，使长轴与屏幕的长边平行
@@ -95,8 +95,8 @@ async function graph_layout_algorithm(nodes, links, nodes_dict, f) {
     // Verlet integration
     // 随机初始化 x_0
     for (i in nodes) {
-        nodes[i].x = Math.random() * 0.8 * width + 0.1 * width;
-        nodes[i].y = Math.random() * 0.8 * height + 0.1 * height;
+        nodes[i].x = Math.random() * 0.6 * width + 0.2 * width;
+        nodes[i].y = Math.random() * 0.6 * height + 0.2 * height;
     }
 
     await f();
@@ -131,8 +131,8 @@ async function graph_layout_algorithm(nodes, links, nodes_dict, f) {
         for (k2 = 0; k2 < 100; k2++) {
             calc_acceleration(nodes, links, nodes_dict, true);
             for (i in nodes) {
-                let new_x = 2 * nodes[i].x - nodes[i].old_x + nodes[i].ax * delta_t * delta_t;
-                let new_y = 2 * nodes[i].y - nodes[i].old_y + nodes[i].ay * delta_t * delta_t;
+                let new_x = nodes[i].x + (nodes[i].x - nodes[i].old_x) * 0.99 + nodes[i].ax * delta_t * delta_t;
+                let new_y = nodes[i].y + (nodes[i].y - nodes[i].old_y) * 0.99 + nodes[i].ay * delta_t * delta_t;
                 nodes[i].old_x = nodes[i].x;
                 nodes[i].old_y = nodes[i].y;
                 nodes[i].x = new_x;
