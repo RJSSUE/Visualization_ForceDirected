@@ -115,7 +115,7 @@ let calc_acceleration = function(nodes, links) {
 
 // 需要实现一个图布局算法，给出每个node的x,y属性
 // f是每步的可视化
-async function graph_layout_algorithm(nodes, links, nodes_dict, f) {
+async function graph_layout_algorithm(nodes, links, f) {
     // 算法开始时间
     d = new Date()
     begin = d.getTime()
@@ -290,7 +290,7 @@ async function draw_graph() {
         .attr("display", 'none');
 
     // 图布局算法
-    graph_layout_algorithm(nodes, links, nodes_dict, async function() {
+    graph_layout_algorithm(nodes, links, async function() {
         link
             .attr("x1", d => nodes_dict[d.source].x)
             .attr("y1", d => nodes_dict[d.source].y)
