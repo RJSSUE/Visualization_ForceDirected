@@ -12,8 +12,8 @@ let d_Hooke = 100; // 弹簧的标准长度 现在是所有弹簧的标准长度
 let k_middle = -0.001; // 一个纵向的力，使长轴与屏幕的长边平行
 let central_line = 0.5 * height;
 let mu = -0.5; // 阻力与速度的比值
-let initial_delta_t = 0.3, delta_t = 0.1; // 模拟的时间步的长度，调大会使模拟变快，但可能会导致不精准
-// 注意实际采用的delta_t会变化，具体可搜索"delta_t = "来找到对应语句
+let v_threshold = 0.01; // 收敛时的平均速度，越大收敛越快，但可能离完全收敛越远。
+let delta_t = 1.01; // 模拟的时间步的长度，调大会使模拟变快，但可能会导致不精准
 
 // 计算质心
 let calc_center = function(nodes) {
@@ -35,7 +35,7 @@ let calc_acceleration = function(nodes, links) {
     
     // 计算库伦力
     for (let i = 0; i < len; ++i) {
-        for (let j = i + 1; j < len; ++j) {
+        for (let j = 0; j < i; ++j) {
             let dx = xs[j] - xs[i];
             let dy = ys[j] - ys[i];
             let d = dx * dx + dy * dy;
@@ -97,9 +97,12 @@ async function graph_layout_algorithm(nodes, links, nodes_dict, f) {
         return ret;
     };
     let nodes_OoA = {xs: [], ys: [], weights: [], vx: get_zeros(), vy: get_zeros()};
+    let total_mass = 0;
     for (let i = 0; i < len; ++i) {
         nodes_OoA.weights[i] = nodes[i].weight;
+        total_mass += nodes[i].weight;
     }
+    let KE_threshold = total_mass * v_threshold * v_threshold;
     let id2idx = {};
     for (let i = 0; i < len; ++i) {
         id2idx[nodes[i].id] = i;
@@ -114,53 +117,45 @@ async function graph_layout_algorithm(nodes, links, nodes_dict, f) {
     };
 
     //这是一个随机布局，请在这一部分实现图布局算法
-    // Verlet integration
+    // Beeman's method
     // 随机初始化 x_0
+    let ax_minus_delta_t = get_zeros(), ay_minus_delta_t = get_zeros();
     for (let i = 0; i < len; ++i) {
         nodes_OoA.xs[i] = Math.random() * 0.6 * width + 0.2 * width;
         nodes_OoA.ys[i] = Math.random() * 0.6 * height + 0.2 * height;
     }
+    let [ax, ay] = calc_acceleration(nodes_OoA, new_links);
 
-    move_data();
-    await f();
-
-    for (k = 0; k < 62; ++k) {
-        delta_t = Math.log2(k+2) * initial_delta_t; // 逐渐调大时间步以加速收敛
-        let borders = {'left': 0.1*width, 'right': 0.9 * width, 'top': 0.1 * height, 'bottom': 0.9 * height};
-        nodes_OoA.xs = nodes_OoA.xs.map(x => borders.left + (x < borders.left ? 0.1 : 1) * (x - borders.left));
-        nodes_OoA.ys = nodes_OoA.ys.map(y => borders.top + (y < borders.top ? 0.1 : 1) * (y - borders.top));
-        nodes_OoA.xs = nodes_OoA.xs.map(x => borders.right + (x > borders.right ? 0.1 : 1) * (x - borders.right));
-        nodes_OoA.ys = nodes_OoA.ys.map(y => borders.bottom + (y > borders.bottom ? 0.1 : 1) * (y - borders.bottom));
-        nodes_OoA.vx = get_zeros();
-        nodes_OoA.vy = get_zeros();
-        // x_1
-        let [ax, ay] = calc_acceleration(nodes_OoA, new_links);
-        nodes_OoA.vx = ax.map(a => a * delta_t / 2);
-        nodes_OoA.vy = ay.map(a => a * delta_t / 2);
+    while (true) {
         for (let i = 0; i < len; ++i) {
-            nodes_OoA.xs[i] += ax[i] * delta_t * delta_t / 2;
-            nodes_OoA.ys[i] += ay[i] * delta_t * delta_t / 2;
+            nodes_OoA.xs[i] += (nodes_OoA.vx[i] + (4 * ax[i] - ax_minus_delta_t[i]) / 6 * delta_t) * delta_t;
+            nodes_OoA.ys[i] += (nodes_OoA.vy[i] + (4 * ay[i] - ay_minus_delta_t[i]) / 6 * delta_t) * delta_t;
+            nodes_OoA.vx[i] += (3 * ax[i] - ax_minus_delta_t[i]) / 2 * delta_t;
+            nodes_OoA.vy[i] += (3 * ay[i] - ay_minus_delta_t[i]) / 2 * delta_t;
         }
-        move_data();
-        await f();
-        
-        // x_other
-        for (let k2 = 0; k2 < 100; k2++) {
-            let [ax, ay] = calc_acceleration(nodes_OoA, new_links);
-            for (let i = 0; i < len; ++i) {
-                nodes_OoA.vx[i] = nodes_OoA.vx[i] * 0.99 + ax[i] * delta_t;
-                nodes_OoA.vy[i] = nodes_OoA.vy[i] * 0.99 + ay[i] * delta_t;
-                nodes_OoA.xs[i] += nodes_OoA.vx[i] * delta_t;
-                nodes_OoA.ys[i] += nodes_OoA.vy[i] * delta_t;
-            }
-            //move_data();
-            //await f();
+        let [new_ax, new_ay] = calc_acceleration(nodes_OoA, new_links);
+        for (let i = 0; i < len; ++i) {
+            nodes_OoA.vx[i] += 5 * (new_ax[i] - 2 * ax[i] + ax_minus_delta_t[i]) * delta_t / 12;
+            nodes_OoA.vy[i] += 5 * (new_ay[i] - 2 * ay[i] + ay_minus_delta_t[i]) * delta_t / 12;
         }
+        let KE = 0;
+        for (let i = 0; i < len; ++i) {
+            KE += nodes_OoA.weights[i] * (nodes_OoA.vx[i] * nodes_OoA.vx[i] + nodes_OoA.vy[i] * nodes_OoA.vy[i]);
+        }
+        if (KE < KE_threshold) break;
+        ax_minus_delta_t = ax;
+        ay_minus_delta_t = ay;
+        ax = new_ax;
+        ay = new_ay;
     }
 
     // 算法结束时间
     d2 = new Date()
     end = d2.getTime()
+
+    move_data();
+    await f();
+    alert(end - begin);
 
     // 保存图布局结果和花费时间为json格式，并按提交方式中重命名，提交时请注释这一部分代码
     //var content = JSON.stringify({"time": end-begin, "nodes": nodes, "links": links});
