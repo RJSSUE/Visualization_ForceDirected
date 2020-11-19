@@ -5,7 +5,46 @@ let height = _height;
 
 let data = null;
 let data_file = './data/data.json';
+let institutionColors = {
+    'Zhejiang University':'#0f4894',
+    'University of Wisconsin - Madison':'#9a203e',
+    'University of Washington':'#533788',
+    'University of Toronto':'#0b3362',
+    'University of Texas at Austin':'#cc5318',
+    'University of Pennsylvania':'#0c1e55',
+    'University of Michigan':'#fecd19',
+    'University of Maryland - College Park':'#d7353e',
+    'University of Illinois at Urbana-Champaign':'#e75132',
+    'University of California - San Diego':'#0e719a',
+    'University of California - Los Angeles':'#35508b',
+    'University of California - Berkeley':'#0c3c69',
+    'Tsinghua University':'#732bac',
+    'The Hong Kong University of Science and Technology':'#263f6a',
+    'Swiss Federal Institute of Technology Zurich':'#2c2c2c',
+    'Stanford University':'#b41d1a',
+    'Shanghai Jiao Tong University':'#ca2128',
+    'Peking University':'#91180b',
+    'Nanjing University':'#6a1a66',
+    'Massachusetts Institute of Technology':'#0d393b',
+    'Israel Institute of Technology':'#0d1440',
+    'Georgia Institute of Technology':'#b6a770',
+    'Fudan University':'#2a57a3',
+    'Cornell University':'#b62226',
+    'Columbia University':'#1451a7',
+    'Chinese University of Hong Kong':'#742675',
+    'Carnegie Mellon University':'#c6223a'
+};
 
+const duration = document.getElementById('dur');
+const speed = document.getElementById('speed');
+function changeV() {
+    let durVal = parseFloat(duration.value);
+    let spdVal = parseFloat(speed.value);
+    const durationPercent = parseFloat(durVal, 2) * 100
+    const speedPercent = parseFloat((spdVal / 5), 2) * 100
+    duration.style.backgroundSize = `${durationPercent}%, 100%`
+    speed.style.background = `linear-gradient(to right, #ffa200, white ${speedPercent}%, white`
+};
 let k_Coulomb = -0.06; // 库伦力常数，符号影响排斥/吸引，负数是排斥
 let k_Hooke = 0.005; // 弹簧弹力常数，正数是弹簧拉长时吸引，弹簧实际使用时会乘上学校间共享的人数
 let d_Hooke = 100; // 弹簧的标准长度 现在是所有弹簧的标准长度均如此，与弹簧的强度等等无关
@@ -171,14 +210,36 @@ async function draw_graph() {
         nodes_dict[nodes[i].id] = nodes[i]
     }
 
-    // links
     let link = svg.append("g")
         .attr("stroke", "#999")
         .attr("stroke-opacity", 0.6)
         .selectAll("line")
         .data(links)
         .join("line")
-        .attr("stroke-width", d => Math.sqrt(d.weight));
+        .attr("stroke-width", d => Math.sqrt(d.weight))
+        .on("mouseover", function (e, d) {
+            console.log(d3.select(this))
+            console.log(d)
+            d3.select(this).transition()
+                .attr("stroke-width", 10)
+                .attr("stroke-opacity", 0.3)
+            let content = '<table>'
+                + '<tr><td>Graduate from</td><td>' + `${d.source}` + '</td></tr>'
+                + '<tr><td>Work at</td><td>'+ `${d.target}` + '</td></tr>'
+                + '<tr><td>Number</td><td>'+ `${d.weight}` + '</td></tr>'
+                + '</table>';
+
+            d3.select('#tooltip').html(content)
+                .style('left', `${(nodes_dict[d.source].x+nodes_dict[d.target].x)/2}` + 'px')
+                .style('top', `${(nodes_dict[d.source].y+nodes_dict[d.target].y)*0.5}` + 'px')
+                .style('visibility', 'visible');
+        })
+        .on("mouseout", function (e, d) {
+            d3.select(this).transition()
+                .attr("stroke-width", d => Math.sqrt(d.weight))
+                .attr("stroke-opacity", 0.6)
+            d3.select('#tooltip').style('visibility', 'hidden');
+        });
 
     // nodes
     let node = svg.append("g")
@@ -187,12 +248,18 @@ async function draw_graph() {
         .selectAll("circle")
         .data(nodes)
         .join("circle")
-        .attr("r", d => Math.sqrt(d.weight) * 2 + 0.5)
-        .attr("fill", "steelblue")
+        .attr("r", d => Math.sqrt(d.weight) + 2)
+        .attr("opacity",0.8)
+        .attr("fill", (d)=>{
+            if (d.id in institutionColors)
+                return institutionColors[d.id]
+            else
+                return "steelblue"})
+        // .call(drag(simulation))
         .on("mouseover", function (e, d) {// 鼠标移动到node上时显示text
             text
                 .attr("display", function (f) {
-                    if (f.id == d.id || f.weight > 40) {
+                    if (f.id == d.id) {
                         return "null";
                     }
                     else {
@@ -202,14 +269,7 @@ async function draw_graph() {
         })
         .on("mouseout", function (e, d) {// 鼠标移出node后按条件判断是否显示text
             text
-                .attr("display", function (f) {
-                    if (f.weight > 40) {
-                        return 'null';
-                    }
-                    else {
-                        return 'none';
-                    }
-                })
+                .attr("display",  'none')
         });
 
 
@@ -218,23 +278,16 @@ async function draw_graph() {
         .attr('stroke', '#fff')
         .attr('stroke-width', 0.5)
         .append('circle')
-            .attr('r', d => 10)
-            .attr('fill', 'red');
+        .attr('r', d => 10)
+        .attr('fill', 'red');
 
     // 学校名称text，只显示满足条件的学校
     let text = svg.append("g")
         .selectAll("text")
         .data(nodes)
         .join("text")
-        .text(d => d.id)
-        .attr("display", function (d) {
-            if (d.weight > 40) {
-                return 'null';
-            }
-            else {
-                return 'none';
-            }
-        });
+        .text(d => d.id+' '+d.weight+' graduates')
+        .attr("display", 'none');
 
     // 图布局算法
     graph_layout_algorithm(nodes, links, nodes_dict, async function() {

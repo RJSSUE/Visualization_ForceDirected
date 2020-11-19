@@ -38,3 +38,52 @@ html,body {
     background-color: rgba(240, 240, 240, 0.9);
     overflow: hidden;
 }
+
+#tooltip{
+    position: absolute;
+    text-align: center;
+    background-color: rgba(250, 250, 250, 1);
+    border: 1px solid rgb(200,200,200);
+    border-radius:5px;
+    font-size:0.8rem;
+    width: 15rem;;
+    padding:4px;
+    color:black;
+    z-index: 3;
+    visibility: hidden;
+    opacity: 0.8;
+}
+#selector{
+    position: absolute;
+    text-anchor: middle;
+    font-size: 0.7rem;
+    opacity: 80%;
+    visibility: visible;
+}
+input[type="range"] {
+    width: 100%;
+    -webkit-appearance: none;
+    height: 8px;
+    border-radius: 4px;
+    background: -webkit-linear-gradient(#ffa200, #ffa200) no-repeat white;
+    background-size: 50% 100%; /* 因为周期默认value=0.50正好占50% */
+}
+/* -webkit-slider-thumb仅对谷歌浏览器有效 */
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    background-color: #aaa;
+    width: 8px;
+    height: 20px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    background: #666;
+}
+
+/* 左侧渐变色的写法,默认滑块在最左侧所以下面white为0% */
+#speed {
+    background: linear-gradient(to right, #ffa200, white 0%, white);
+    background-size: 100% 100%;
+}
