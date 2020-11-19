@@ -9,8 +9,6 @@ let data_file = './data/data.json';
 let k_Coulomb = -0.06; // 库伦力常数，符号影响排斥/吸引，负数是排斥
 let k_Hooke = 0.005; // 弹簧弹力常数，正数是弹簧拉长时吸引，弹簧实际使用时会乘上学校间共享的人数
 let d_Hooke = 100; // 弹簧的标准长度 现在是所有弹簧的标准长度均如此，与弹簧的强度等等无关
-let k_middle = -0.001; // 一个纵向的力，使长轴与屏幕的长边平行
-let central_line = 0.5 * height;
 let mu = -0.5; // 阻力与速度的比值
 let v_threshold = 0.01; // 收敛时的平均速度，越大收敛越快，但可能离完全收敛越远。
 let delta_t = 1.01; // 模拟的时间步的长度，调大会使模拟变快，但可能会导致不精准
@@ -62,13 +60,6 @@ let calc_acceleration = function(nodes, links) {
         Fx[tgt] += F * dx / d;
         Fy[tgt] += F * dy / d;
     }
-
-    // 计算纵向力
-    for (let i = 0; i < len; ++i) {
-        let dis = ys[i] - central_line;
-        Fy[i] += k_middle * weights[i] * dis;
-    }
-
     // 计算阻力
     for (let i = 0; i < len; ++i) {
         Fx[i] += mu * nodes.vx[i];
