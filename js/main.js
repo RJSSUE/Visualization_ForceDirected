@@ -27,64 +27,60 @@ let calc_center = function(nodes) {
 };
 
 // 计算每个节点的加速度。
-// use_old代表nodes上有没有前一时间步的座标，没有的话不会计算阻力，因为我们的模拟没有计算每一步的速度，因此速度是用座标差除以时间步长度硬算出来的，可能要修改模拟的实现来直接提供速度。
-let calc_acceleration = function(nodes, links, nodes_dict, use_old) {
-    // nodes[i].Fx和nodes[i].Fy分别代表受力在x, y方向的分量
-    const len = nodes.length;
-    for (let i = 0; i < len; ++i) {
-        nodes[i].Fx = 0;
-        nodes[i].Fy = 0;
-    }
-
+let calc_acceleration = function(nodes, links) {
+    // Fx[]和Fy[]分别代表受力在x, y方向的分量
+    let Fx = nodes.xs.map(x => 0), Fy = nodes.xs.map(x => 0);
+    let xs = nodes.xs, ys = nodes.ys, weights = nodes.weights;
+    const len = nodes.xs.length;
+    
     // 计算库伦力
     for (let i = 0; i < len; ++i) {
         for (let j = i + 1; j < len; ++j) {
-            let dx = nodes[j].x - nodes[i].x;
-            let dy = nodes[j].y - nodes[i].y;
+            let dx = xs[j] - xs[i];
+            let dy = ys[j] - ys[i];
             let d = dx * dx + dy * dy;
-            let F = k_Coulomb * nodes[i].weight * nodes[j].weight / d;
-            nodes[i].Fx += F * dx;
-            nodes[j].Fx += -F * dx;
-            nodes[i].Fy += F * dy;
-            nodes[j].Fy += -F * dy;
+            let F = k_Coulomb * weights[i] * weights[j] / d;
+            Fx[i] += F * dx;
+            Fx[j] += -F * dx;
+            Fy[i] += F * dy;
+            Fy[j] += -F * dy;
         }
     }
 
     // 计算弹簧弹力
     const len_links = links.length;
     for (let l = 0; l < len_links; ++l) {
-        if (links[l].source == links[l].target) continue;
-        let src = nodes_dict[links[l].source];
-        let tgt = nodes_dict[links[l].target];
-        let dx = src.x - tgt.x;
-        let dy = src.y - tgt.y;
+        let src = links[l].source;
+        let tgt = links[l].target;
+        if (src == tgt) continue;
+        let dx = xs[src] - xs[tgt];
+        let dy = ys[src] - ys[tgt];
         let d = Math.hypot(dx, dy);
         let F = k_Hooke * (d - d_Hooke) * links[l].weight;
-        src.Fx += -F * dx / d;
-        src.Fy += -F * dy / d;
-        tgt.Fx += F * dx / d;
-        tgt.Fy += F * dy / d;
+        Fx[src] += -F * dx / d;
+        Fy[src] += -F * dy / d;
+        Fx[tgt] += F * dx / d;
+        Fy[tgt] += F * dy / d;
     }
 
     // 计算纵向力
     for (let i = 0; i < len; ++i) {
-        let dis = nodes[i].y - central_line;
-        nodes[i].Fy += k_middle * nodes[i].weight * dis;
+        let dis = ys[i] - central_line;
+        Fy[i] += k_middle * weights[i] * dis;
     }
 
-    if (use_old) {
-        // 计算阻力
-        for (let i = 0; i < len; ++i) {
-            nodes[i].Fx += mu * (nodes[i].x - nodes[i].old_x) / delta_t;
-            nodes[i].Fy += mu * (nodes[i].y - nodes[i].old_y) / delta_t;
-        }
+    // 计算阻力
+    for (let i = 0; i < len; ++i) {
+        Fx[i] += mu * nodes.vx[i];
+        Fy[i] += mu * nodes.vy[i];
     }
 
     // 计算加速度
     for (let i = 0; i < len; ++i) {
-        nodes[i].ax = nodes[i].Fx / nodes[i].weight;
-        nodes[i].ay = nodes[i].Fy / nodes[i].weight;
+        Fx[i] /= weights[i];
+        Fy[i] /= weights[i];
     }
+    return [Fx, Fy];
 };
 
 // 需要实现一个图布局算法，给出每个node的x,y属性
@@ -94,53 +90,70 @@ async function graph_layout_algorithm(nodes, links, nodes_dict, f) {
     d = new Date()
     begin = d.getTime()
 
+    const len = nodes.length;
+    let get_zeros = function() {
+        let ret = new Array(len);
+        ret.fill(0);
+        return ret;
+    };
+    let nodes_OoA = {xs: [], ys: [], weights: [], vx: get_zeros(), vy: get_zeros()};
+    for (let i = 0; i < len; ++i) {
+        nodes_OoA.weights[i] = nodes[i].weight;
+    }
+    let id2idx = {};
+    for (let i = 0; i < len; ++i) {
+        id2idx[nodes[i].id] = i;
+    }
+    let new_links = links.map(x => { return {source: id2idx[x.source], target: id2idx[x.target], weight: x.weight}; });
+
+    let move_data = () => {
+        for (let i = 0; i < len; ++i) {
+            nodes[i].x = nodes_OoA.xs[i];
+            nodes[i].y = nodes_OoA.ys[i];
+        }
+    };
+
     //这是一个随机布局，请在这一部分实现图布局算法
     // Verlet integration
     // 随机初始化 x_0
-    for (i in nodes) {
-        nodes[i].x = Math.random() * 0.6 * width + 0.2 * width;
-        nodes[i].y = Math.random() * 0.6 * height + 0.2 * height;
+    for (let i = 0; i < len; ++i) {
+        nodes_OoA.xs[i] = Math.random() * 0.6 * width + 0.2 * width;
+        nodes_OoA.ys[i] = Math.random() * 0.6 * height + 0.2 * height;
     }
 
+    move_data();
     await f();
 
     for (k = 0; k < 62; ++k) {
         delta_t = Math.log2(k+2) * initial_delta_t; // 逐渐调大时间步以加速收敛
         let borders = {'left': 0.1*width, 'right': 0.9 * width, 'top': 0.1 * height, 'bottom': 0.9 * height};
-        for (i in nodes) {
-            let check = function(getter, setter, border, less) {
-                if (less) {
-                    if (getter(nodes[i]) < border) setter(nodes[i], (getter(nodes[i]) - border) * 0.1 + border);
-                } else {
-                    if (getter(nodes[i]) > border) setter(nodes[i], (getter(nodes[i]) - border) * 0.1 + border);
-                }
-            };
-            check((n) => n.x, (n, x) => n.x = x, borders.left, true);
-            check((n) => n.x, (n, x) => n.x = x, borders.right, false);
-            check((n) => n.y, (n, x) => n.y = x, borders.top, true);
-            check((n) => n.y, (n, x) => n.y = x, borders.bottom, false);
-        }
+        nodes_OoA.xs = nodes_OoA.xs.map(x => borders.left + (x < borders.left ? 0.1 : 1) * (x - borders.left));
+        nodes_OoA.ys = nodes_OoA.ys.map(y => borders.top + (y < borders.top ? 0.1 : 1) * (y - borders.top));
+        nodes_OoA.xs = nodes_OoA.xs.map(x => borders.right + (x > borders.right ? 0.1 : 1) * (x - borders.right));
+        nodes_OoA.ys = nodes_OoA.ys.map(y => borders.bottom + (y > borders.bottom ? 0.1 : 1) * (y - borders.bottom));
+        nodes_OoA.vx = get_zeros();
+        nodes_OoA.vy = get_zeros();
         // x_1
-        calc_acceleration(nodes, links, nodes_dict, false);
-        for (i in nodes) {
-            nodes[i].old_x = nodes[i].x;
-            nodes[i].old_y = nodes[i].y;
-            nodes[i].x += nodes[i].ax * delta_t * delta_t / 2;
-            nodes[i].y += nodes[i].ay * delta_t * delta_t / 2;
+        let [ax, ay] = calc_acceleration(nodes_OoA, new_links);
+        nodes_OoA.vx = ax.map(a => a * delta_t / 2);
+        nodes_OoA.vy = ay.map(a => a * delta_t / 2);
+        for (let i = 0; i < len; ++i) {
+            nodes_OoA.xs[i] += ax[i] * delta_t * delta_t / 2;
+            nodes_OoA.ys[i] += ay[i] * delta_t * delta_t / 2;
         }
+        move_data();
         await f();
         
         // x_other
-        for (k2 = 0; k2 < 100; k2++) {
-            calc_acceleration(nodes, links, nodes_dict, true);
-            for (i in nodes) {
-                let new_x = nodes[i].x + (nodes[i].x - nodes[i].old_x) * 0.99 + nodes[i].ax * delta_t * delta_t;
-                let new_y = nodes[i].y + (nodes[i].y - nodes[i].old_y) * 0.99 + nodes[i].ay * delta_t * delta_t;
-                nodes[i].old_x = nodes[i].x;
-                nodes[i].old_y = nodes[i].y;
-                nodes[i].x = new_x;
-                nodes[i].y = new_y;
+        for (let k2 = 0; k2 < 100; k2++) {
+            let [ax, ay] = calc_acceleration(nodes_OoA, new_links);
+            for (let i = 0; i < len; ++i) {
+                nodes_OoA.vx[i] = nodes_OoA.vx[i] * 0.99 + ax[i] * delta_t;
+                nodes_OoA.vy[i] = nodes_OoA.vy[i] * 0.99 + ay[i] * delta_t;
+                nodes_OoA.xs[i] += nodes_OoA.vx[i] * delta_t;
+                nodes_OoA.ys[i] += nodes_OoA.vy[i] * delta_t;
             }
+            //move_data();
             //await f();
         }
     }
