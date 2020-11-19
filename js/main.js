@@ -99,6 +99,7 @@ let calc_acceleration = function(nodes, links) {
         Fx[tgt] += F * dx / d;
         Fy[tgt] += F * dy / d;
     }
+    
     // 计算阻力
     for (let i = 0; i < len; ++i) {
         Fx[i] += mu * nodes.vx[i];
@@ -121,24 +122,19 @@ async function graph_layout_algorithm(nodes, links, f) {
     begin = d.getTime()
 
     const len = nodes.length;
+    // 产生全0数组的便捷函数
     let get_zeros = function() {
         let ret = new Array(len);
         ret.fill(0);
         return ret;
     };
+
+    // nodes的代替品，用来盛放中间结果，OoA = Object of Arrays
     let nodes_OoA = {xs: [], ys: [], weights: [], vx: get_zeros(), vy: get_zeros()};
-    let total_mass = 0;
     for (let i = 0; i < len; ++i) {
         nodes_OoA.weights[i] = nodes[i].weight;
-        total_mass += nodes[i].weight;
     }
-    let KE_threshold = total_mass * v_threshold * v_threshold;
-    let id2idx = {};
-    for (let i = 0; i < len; ++i) {
-        id2idx[nodes[i].id] = i;
-    }
-    let new_links = links.map(x => { return {source: id2idx[x.source], target: id2idx[x.target], weight: x.weight}; });
-
+    // 把数据从nodes_OoA转移到nodes的函数
     let move_data = () => {
         for (let i = 0; i < len; ++i) {
             nodes[i].x = nodes_OoA.xs[i];
@@ -146,14 +142,26 @@ async function graph_layout_algorithm(nodes, links, f) {
         }
     };
 
+    // 收敛时的总动能
+    let KE_threshold = nodes_OoA.weights.reduce((a, b) => a + b) * v_threshold * v_threshold;
+
+    let id2idx = {};
+    for (let i = 0; i < len; ++i) {
+        id2idx[nodes[i].id] = i;
+    }
+    // links的代替品，把节点的名字换成了它们的编号
+    let new_links = links.map(x => { return {source: id2idx[x.source], target: id2idx[x.target], weight: x.weight}; });
+
     //这是一个随机布局，请在这一部分实现图布局算法
     // Beeman's method
     // 随机初始化 x_0
-    let ax_minus_delta_t = get_zeros(), ay_minus_delta_t = get_zeros();
     for (let i = 0; i < len; ++i) {
         nodes_OoA.xs[i] = Math.random() * 0.6 * width + 0.2 * width;
         nodes_OoA.ys[i] = Math.random() * 0.6 * height + 0.2 * height;
     }
+    // a_{t - Δt}的x分量和y分量
+    let ax_minus_delta_t = get_zeros(), ay_minus_delta_t = get_zeros();
+    // a_t的x分量和y分量
     let [ax, ay] = calc_acceleration(nodes_OoA, new_links);
 
     while (true) {
@@ -163,11 +171,13 @@ async function graph_layout_algorithm(nodes, links, f) {
             nodes_OoA.vx[i] += (3 * ax[i] - ax_minus_delta_t[i]) / 2 * delta_t;
             nodes_OoA.vy[i] += (3 * ay[i] - ay_minus_delta_t[i]) / 2 * delta_t;
         }
+        // a_{t + Δt}的x分量和y分量
         let [new_ax, new_ay] = calc_acceleration(nodes_OoA, new_links);
         for (let i = 0; i < len; ++i) {
             nodes_OoA.vx[i] += 5 * (new_ax[i] - 2 * ax[i] + ax_minus_delta_t[i]) * delta_t / 12;
             nodes_OoA.vy[i] += 5 * (new_ay[i] - 2 * ay[i] + ay_minus_delta_t[i]) * delta_t / 12;
         }
+        // 计算动能并判断是否需要结束
         let KE = 0;
         for (let i = 0; i < len; ++i) {
             KE += nodes_OoA.weights[i] * (nodes_OoA.vx[i] * nodes_OoA.vx[i] + nodes_OoA.vy[i] * nodes_OoA.vy[i]);
