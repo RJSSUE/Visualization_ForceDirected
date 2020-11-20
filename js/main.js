@@ -242,6 +242,9 @@ async function graph_layout_algorithm(nodes, links, f) {
     //saveAs(blob, "save.json");
 }
 let links,nodes,nodes_dict,svg,link,node,center,text;
+function clamp(x, lo, hi) {
+    return x < lo ? lo : x > hi ? hi : x;
+}
 async function draw_graph() {
     // 数据格式
     // nodes = [{"id": 学校名称, "weight": 毕业学生数量}, ...]
@@ -261,9 +264,8 @@ async function draw_graph() {
         .data(links)
         .join("line")
         .attr("stroke-width", d => Math.sqrt(d.weight))
+        .classed("link", true)
         .on("mouseover", function (e, d) {
-            console.log(d3.select(this))
-            console.log(d)
             d3.select(this).transition()
                 .attr("stroke-width", 10)
                 .attr("stroke-opacity", 0.3)
@@ -299,7 +301,8 @@ async function draw_graph() {
                 return institutionColors[d.id]
             else
                 return "steelblue"})
-        // .call(drag(simulation))
+        .classed("node", true)
+        .classed("fixed", d => d.fx !== undefined)
         .on("mouseover", function (e, d) {// 鼠标移动到node上时显示text
             d3.select(this).attr("opacity",0.3)
             text
@@ -361,6 +364,52 @@ async function draw_graph() {
 
     // 绘制links, nodes和text的位置
     // 绘制已在graph_layout_algorithm中完成
+    const drag = d3.drag()
+        .on("start", dragstart)
+        .on("drag", dragged)
+        // .on("end",dragend);
+
+    node.call(drag).on("click", click);
+
+    function click(event, d) {
+        delete d.fx;
+        delete d.fy;
+        d3.select(this).classed("fixed", false);
+    }
+
+    function dragstart() {
+        d3.select(this).classed("fixed", true);
+    }
+
+    function dragged(event, d) {
+        d3.select(this)
+            .attr("cx",d.x = event.x)
+            .attr("cy",d.y = event.y);
+        link.transition()
+            .attr("x1", d => nodes_dict[d.source].x)
+            .attr("y1", d => nodes_dict[d.source].y)
+            .attr("x2", d => nodes_dict[d.target].x)
+            .attr("y2", d => nodes_dict[d.target].y);
+    }
+    function dragend(event, d){
+        graph_layout_algorithm(nodes, links, async function() {
+            link.transition().duration(1000)
+                .attr("x1", d => nodes_dict[d.source].x)
+                .attr("y1", d => nodes_dict[d.source].y)
+                .attr("x2", d => nodes_dict[d.target].x)
+                .attr("y2", d => nodes_dict[d.target].y);
+
+            node.transition().duration(1000)
+                .attr("cx", d => d.x)
+                .attr("cy", d => d.y);
+            text.transition().duration(1000)
+                .attr("x", d => d.x)
+                .attr("y", d => d.y);
+
+            // 这是一个土法sleep，希望有更好的方法
+            await new Promise(resolve => (setTimeout(resolve, 1)));
+        });
+    }
 }
 
 function main() {
