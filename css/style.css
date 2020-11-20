@@ -65,8 +65,6 @@ input[type="range"] {
     -webkit-appearance: none;
     height: 8px;
     border-radius: 4px;
-    background: -webkit-linear-gradient(#ffa200, #ffa200) no-repeat white;
-    background-size: 50% 100%; /* 因为周期默认value=0.50正好占50% */
 }
 /* -webkit-slider-thumb仅对谷歌浏览器有效 */
 input[type="range"]::-webkit-slider-thumb {
@@ -81,9 +79,31 @@ input[type="range"]::-webkit-slider-thumb {
 input[type="range"]::-webkit-slider-thumb:hover {
     background: #666;
 }
-
-/* 左侧渐变色的写法,默认滑块在最左侧所以下面white为0% */
-#speed {
-    background: linear-gradient(to right, #ffa200, white 0%, white);
+button{
+    cursor: pointer;
+    background: lightgoldenrodyellow;
+}
+#k_Coulomb {
+    background: linear-gradient(to right, #ffa200, white 40%, white);
+    background-size: 100% 100%;
+}
+#k_Hooke {
+    background: linear-gradient(to right, #ffa200, white 30%, white);
+    background-size: 100% 100%;
+}
+#d_Hooke {
+    background: linear-gradient(to right, #ffa200, white 50%, white);
+    background-size: 100% 100%;
+}
+#mu {
+    background: linear-gradient(to right, #ffa200, white 50%, white);
+    background-size: 100% 100%;
+}
+#v_threshold {
+    background: linear-gradient(to right, #ffa200, white 10%, white);
+    background-size: 100% 100%;
+}
+#delta_t {
+    background: linear-gradient(to right, #ffa200, white 50%, white);
     background-size: 100% 100%;
 }

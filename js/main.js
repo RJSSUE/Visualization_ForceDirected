@@ -35,23 +35,44 @@ let institutionColors = {
     'Carnegie Mellon University':'#c6223a'
 };
 
-const duration = document.getElementById('dur');
-const speed = document.getElementById('speed');
-function changeV() {
-    let durVal = parseFloat(duration.value);
-    let spdVal = parseFloat(speed.value);
-    const durationPercent = parseFloat(durVal, 2) * 100
-    const speedPercent = parseFloat((spdVal / 5), 2) * 100
-    duration.style.backgroundSize = `${durationPercent}%, 100%`
-    speed.style.background = `linear-gradient(to right, #ffa200, white ${speedPercent}%, white`
-};
+
+
 let k_Coulomb = -0.06; // 库伦力常数，符号影响排斥/吸引，负数是排斥
-let k_Hooke = 0.005; // 弹簧弹力常数，正数是弹簧拉长时吸引，弹簧实际使用时会乘上学校间共享的人数
+let k_Hooke = 0.03; // 弹簧弹力常数，正数是弹簧拉长时吸引，弹簧实际使用时会乘上学校间共享的人数
 let d_Hooke = 100; // 弹簧的标准长度 现在是所有弹簧的标准长度均如此，与弹簧的强度等等无关
 let mu = -0.5; // 阻力与速度的比值
 let v_threshold = 0.01; // 收敛时的平均速度，越大收敛越快，但可能离完全收敛越远。
-let delta_t = 1.01; // 模拟的时间步的长度，调大会使模拟变快，但可能会导致不精准
-
+let delta_t = 1; // 模拟的时间步的长度，调大会使模拟变快，但可能会导致不精准
+function calpercent(obj){//flag表示min是否取负数
+    let Percent = (parseFloat(obj.value)-parseFloat(obj.min)) / (parseFloat(obj.max)-parseFloat(obj.min)) * 100;
+    obj.style.background = `linear-gradient(to right, #ffa200, white ${Percent}%, white)`
+}
+let K_Coulomb = document.getElementById('k_Coulomb');
+let K_Hooke = document.getElementById('k_Hooke');
+let D_Hooke = document.getElementById('d_Hooke');
+let Mu = document.getElementById('mu');
+let V_threshold = document.getElementById('v_threshold');
+let Delta_t = document.getElementById('delta_t');
+function changeV() {
+    k_Coulomb = parseFloat(K_Coulomb.value);
+    d3.select('#k_Coulomb_value').text(`k_Coulomb = ${k_Coulomb}`);
+    calpercent(K_Coulomb);
+    k_Hooke = parseFloat(K_Hooke.value);
+    d3.select('#k_Hooke_value').text(`k_Hooke = ${k_Hooke}`);
+    calpercent(K_Hooke);
+    d_Hooke = parseFloat(D_Hooke.value);
+    d3.select('#d_Hooke_value').text(`d_Hooke = ${d_Hooke}`);
+    calpercent(D_Hooke);
+    mu = parseFloat(Mu.value);
+    d3.select('#mu_value').text(`mu = ${mu}`);
+    calpercent(Mu);
+    v_threshold = parseFloat(V_threshold.value);
+    d3.select('#v_threshold_value').text(`v_threshold = ${v_threshold}`);
+    calpercent(V_threshold);
+    delta_t = parseFloat(Delta_t.value);
+    d3.select('#delta_t_value').text(`delta_t = ${delta_t}`);
+    calpercent(Delta_t);
+};
 // 计算质心
 let calc_center = function(nodes) {
     let sum_x = 0, sum_y = 0, sum_weight = 0;
@@ -208,6 +229,10 @@ async function draw_graph() {
         .select('svg')
         .attr('width', width)
         .attr('height', height);
+    d3.select('#selector')
+        .style('left',_width*0.05 + 'px')
+        .style('top', `${_height*0.05}` + 'px')
+        .style('visibility', 'visible');
 
     // 数据格式
     // nodes = [{"id": 学校名称, "weight": 毕业学生数量}, ...]
@@ -267,6 +292,7 @@ async function draw_graph() {
                 return "steelblue"})
         // .call(drag(simulation))
         .on("mouseover", function (e, d) {// 鼠标移动到node上时显示text
+            d3.select(this).attr("opacity",0.3)
             text
                 .attr("display", function (f) {
                     if (f.id == d.id) {
@@ -278,6 +304,7 @@ async function draw_graph() {
                 })
         })
         .on("mouseout", function (e, d) {// 鼠标移出node后按条件判断是否显示text
+            d3.select(this).attr("opacity",0.8)
             text
                 .attr("display",  'none')
         });
@@ -331,6 +358,10 @@ function main() {
     d3.json(data_file).then(function (DATA) {
         data = DATA;
         draw_graph();
+        d3.select('#set')
+            .on('click',()=>{
+                draw_graph();
+            });
     })
 }
 
