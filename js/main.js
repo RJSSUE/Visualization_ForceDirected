@@ -72,6 +72,7 @@ function changeV() {
     delta_t = parseFloat(Delta_t.value);
     d3.select('#delta_t_value').text(`delta_t = ${delta_t}`);
     calpercent(Delta_t);
+    draw_graph();
 };
 // 计算质心
 let calc_center = function(nodes) {
@@ -229,6 +230,7 @@ async function draw_graph() {
         .select('svg')
         .attr('width', width)
         .attr('height', height);
+    svg.selectAll('g').remove();
     d3.select('#selector')
         .style('left',_width*0.05 + 'px')
         .style('top', `${_height*0.05}` + 'px')
@@ -358,10 +360,6 @@ function main() {
     d3.json(data_file).then(function (DATA) {
         data = DATA;
         draw_graph();
-        d3.select('#set')
-            .on('click',()=>{
-                draw_graph();
-            });
     })
 }
 
