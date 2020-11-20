@@ -72,7 +72,24 @@ function changeV() {
     delta_t = parseFloat(Delta_t.value);
     d3.select('#delta_t_value').text(`delta_t = ${delta_t}`);
     calpercent(Delta_t);
-    draw_graph();
+    // 图布局算法
+    graph_layout_algorithm(nodes, links, async function() {
+        link.transition().duration(1000)
+            .attr("x1", d => nodes_dict[d.source].x)
+            .attr("y1", d => nodes_dict[d.source].y)
+            .attr("x2", d => nodes_dict[d.target].x)
+            .attr("y2", d => nodes_dict[d.target].y);
+
+        node.transition().duration(1000)
+            .attr("cx", d => d.x)
+            .attr("cy", d => d.y);
+        text.transition().duration(1000)
+            .attr("x", d => d.x)
+            .attr("y", d => d.y);
+
+        // 这是一个土法sleep，希望有更好的方法
+        await new Promise(resolve => (setTimeout(resolve, 1)));
+    });
 };
 // 计算质心
 let calc_center = function(nodes) {
@@ -217,37 +234,27 @@ async function graph_layout_algorithm(nodes, links, f) {
 
     move_data();
     await f();
-    alert(end - begin);
+    // alert(end - begin);
 
     // 保存图布局结果和花费时间为json格式，并按提交方式中重命名，提交时请注释这一部分代码
     //var content = JSON.stringify({"time": end-begin, "nodes": nodes, "links": links});
     //var blob = new Blob([content], { type: "text/plain;charset=utf-8" });
     //saveAs(blob, "save.json");
 }
-
+let links,nodes,nodes_dict,svg,link,node,center,text;
 async function draw_graph() {
-    let svg = d3.select('#container')
-        .select('svg')
-        .attr('width', width)
-        .attr('height', height);
-    svg.selectAll('g').remove();
-    d3.select('#selector')
-        .style('left',_width*0.05 + 'px')
-        .style('top', `${_height*0.05}` + 'px')
-        .style('visibility', 'visible');
-
     // 数据格式
     // nodes = [{"id": 学校名称, "weight": 毕业学生数量}, ...]
     // links = [{"source": 毕业学校, "target": 任职学校, "weight": 人数}, ...]
-    let links = data.links;
-    let nodes = data.nodes;
+    links = data.links;
+    nodes = data.nodes;
 
-    let nodes_dict = {};
+    nodes_dict = {};
     for (i in nodes) {
         nodes_dict[nodes[i].id] = nodes[i]
     }
 
-    let link = svg.append("g")
+    link = svg.append("g")
         .attr("stroke", "#999")
         .attr("stroke-opacity", 0.6)
         .selectAll("line")
@@ -279,7 +286,7 @@ async function draw_graph() {
         });
 
     // nodes
-    let node = svg.append("g")
+    node = svg.append("g")
         .attr("stroke", "#fff")
         .attr("stroke-width", 0.5)
         .selectAll("circle")
@@ -313,7 +320,7 @@ async function draw_graph() {
 
 
     // center of mass
-    let center = svg.append('g')
+    center = svg.append('g')
         .attr('stroke', '#fff')
         .attr('stroke-width', 0.5)
         .append('circle')
@@ -321,7 +328,7 @@ async function draw_graph() {
         .attr('fill', 'red');
 
     // 学校名称text，只显示满足条件的学校
-    let text = svg.append("g")
+    text = svg.append("g")
         .selectAll("text")
         .data(nodes)
         .join("text")
@@ -358,6 +365,14 @@ async function draw_graph() {
 
 function main() {
     d3.json(data_file).then(function (DATA) {
+        svg = d3.select('#container')
+            .select('svg')
+            .attr('width', width)
+            .attr('height', height);
+        d3.select('#selector')
+            .style('left',_width*0.05 + 'px')
+            .style('top', `${_height*0.05}` + 'px')
+            .style('visibility', 'visible');
         data = DATA;
         draw_graph();
     })
