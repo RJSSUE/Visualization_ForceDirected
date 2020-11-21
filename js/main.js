@@ -89,9 +89,10 @@ let calc_center = function(nodes) {
 let calc_positions = new Worker('js/calc_positions.js');
 let current_drawer;
 
-function draw_and_calc() {
-    calc_positions.terminate();
+function draw_and_calc(before_start = () => {}) {
+    stop_drawing();
     calc_positions = new Worker('js/calc_positions.js');
+    before_start();
     // 算法开始时间
     d = new Date()
     begin = d.getTime()
@@ -261,6 +262,7 @@ function draw_graph() {
 
     function dragstart() {
         d3.select(this).classed("fixed", true);
+        stop_drawing();
     }
 
     function dragged(event, d) {
@@ -296,9 +298,7 @@ function main() {
             .style('visibility', 'visible');
         d3.select('#restart')
             .on('click',()=>{
-                stop_drawing();
-                randomize_nodes();
-                draw_and_calc();
+                draw_and_calc(randomize_nodes);
             });
         data = DATA;
         draw_graph();
