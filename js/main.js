@@ -116,9 +116,6 @@ function draw_and_calc(before_start = () => {}) {
             .attr("y", d => d.y-5);
 
         let [cx, cy] = calc_center(nodes);
-        center
-            .attr('cx', cx)
-            .attr('cy', cy);
     }
     current_drawer = setInterval(() => {
         calc_positions.onmessage = function (e) {
@@ -142,7 +139,7 @@ function stop_drawing() {
     calc_positions.terminate();
 }
 
-let links,nodes,nodes_dict,svg,link,node,center,text;
+let links,nodes,nodes_dict,svg,link,node,text;
 function randomize_nodes() {
     for (let x of nodes) {
         x.x = (Math.random() * 0.6 + 0.2) * width;
@@ -234,14 +231,6 @@ function draw_graph() {
                 .attr("display",  'none')
         });
 
-
-    // center of mass
-    center = svg.append('g')
-        .attr('stroke', 'none')
-        .append('circle')
-        .attr('r', d => 10)
-        .attr('fill', 'none');
-
     // 学校名称text，只显示满足条件的学校
     text = svg.append("g")
         .selectAll("text")
@@ -261,8 +250,7 @@ function draw_graph() {
         delete d.fx;
         delete d.fy;
         d3.select(this)
-            .classed("fixed", false)
-            .attr('opacity',0,6);
+            .classed("fixed", false);
         draw_and_calc();
     }
 
