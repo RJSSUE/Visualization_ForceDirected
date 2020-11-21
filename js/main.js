@@ -210,6 +210,14 @@ function draw_graph() {
         .classed("fixed", d => d.fx !== undefined)
         .on("mouseover", function (e, d) {// 鼠标移动到node上时显示text
             d3.select(this).attr("opacity",0.3)
+            link.attr("stroke",(l)=>{
+                if(d.id == l.source)
+                    return '#ff7f50';
+                else if(d.id == l.target)
+                    return '#008000'
+                else
+                    return '#999';
+            })
             text
                 .attr("display", function (f) {
                     if (f.id == d.id) {
@@ -221,12 +229,8 @@ function draw_graph() {
                 })
         })
         .on("mouseout", function (e, d) {// 鼠标移出node后按条件判断是否显示text
-            console.log(d)
-            console.log(d3.select(this))
-            // if(d3.select(this).className=='fixed')
-            //     d3.select(this).attr("opacity",1)
-            // else
-                d3.select(this).attr("opacity",0.6)
+            d3.select(this).attr("opacity",0.6)
+            link.attr("stroke","#999")
             text
                 .attr("display",  'none')
         });
