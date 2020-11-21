@@ -87,6 +87,7 @@ let calc_center = function(nodes) {
 };
 
 let calc_positions = new Worker('js/calc_positions.js');
+let current_drawer;
 
 function draw_and_calc() {
     calc_positions.terminate();
@@ -118,28 +119,36 @@ function draw_and_calc() {
             .attr('cx', cx)
             .attr('cy', cy);
     }
-    let drawer = setInterval(() => {
+    current_drawer = setInterval(() => {
         calc_positions.onmessage = function (e) {
             calc_positions.onmessage = normal_wait;
             let [stop, xs, ys] = e.data;
-            if (stop) clearInterval(drawer);
-            draw(xs, ys);
             if (stop) stop_drawing();
+            draw(xs, ys);
         }
     }, 1000/60);
     function normal_wait(e) {
         let [stop, xs, ys] = e.data;
         if (!stop) return;
-        clearInterval(drawer);
-        draw(xs, ys);
         stop_drawing();
+        draw(xs, ys);
     }
-    function stop_drawing() {
-        calc_positions.terminate();
-    }
+    return drawer;
+}
+function stop_drawing() {
+    if (current_drawer === undefined) return;
+    clearInterval(current_drawer);
+    current_drawer = undefined;
+    calc_positions.terminate();
 }
 
 let links,nodes,nodes_dict,svg,link,node,center,text;
+function randomize_nodes() {
+    for (let x of nodes) {
+        x.x = (Math.random() * 0.6 + 0.2) * width;
+        x.y = (Math.random() * 0.6 + 0.2) * height;
+    }
+}
 function clamp(x, lo, hi) {
     return x < lo ? lo : x > hi ? hi : x;
 }
@@ -155,11 +164,7 @@ function draw_graph() {
         nodes_dict[nodes[i].id] = nodes[i]
     }
 
-    for (let x of nodes) {
-        x.x = (Math.random() * 0.6 + 0.2) * width;
-        x.y = (Math.random() * 0.6 + 0.2) * height;
-    }
-
+    randomize_nodes();
     link = svg.append("g")
         .attr("stroke", "#999")
         .attr("stroke-opacity", 0.6)
@@ -291,7 +296,9 @@ function main() {
             .style('visibility', 'visible');
         d3.select('#restart')
             .on('click',()=>{
-
+                stop_drawing();
+                randomize_nodes();
+                draw_and_calc();
             });
         data = DATA;
         draw_graph();
