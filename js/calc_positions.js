@@ -7,7 +7,7 @@ let calc_acceleration = function(nodes, links) {
     const mu = constants.mu;
     // Fx[]和Fy[]分别代表受力在x, y方向的分量
     let Fx = nodes.xs.map(x => 0), Fy = nodes.xs.map(x => 0);
-    let xs = nodes.xs, ys = nodes.ys, weights = nodes.weights;
+    let xs = nodes.xs, ys = nodes.ys, weights = nodes.weights, stopped = nodes.stopped;
     const len = nodes.xs.length;
     
     // 计算库伦力
@@ -48,8 +48,13 @@ let calc_acceleration = function(nodes, links) {
 
     // 计算加速度
     for (let i = 0; i < len; ++i) {
-        Fx[i] /= weights[i];
-        Fy[i] /= weights[i];
+        if (stopped[i]) {
+            Fx[i] = 0;
+            Fy[i] = 0;
+        } else {
+            Fx[i] /= weights[i];
+            Fy[i] /= weights[i];
+        }
     }
     return [Fx, Fy];
 };
@@ -70,7 +75,7 @@ onmessage = function(e) {
     };
 
     // nodes的代替品，用来盛放中间结果，OoA = Object of Arrays
-    let nodes_OoA = {xs: nodes.map(x => x.x), ys: nodes.map(x => x.y), weights: nodes.map(x => x.weight), vx: get_zeros(), vy: get_zeros()};
+    let nodes_OoA = {xs: nodes.map(x => x.x), ys: nodes.map(x => x.y), weights: nodes.map(x => x.weight), vx: get_zeros(), vy: get_zeros(), stopped: nodes.map(x => x.fx !== undefined)};
 
     // 收敛时的总动能
     let KE_threshold = nodes_OoA.weights.reduce((a, b) => a + b) * v_threshold * v_threshold;

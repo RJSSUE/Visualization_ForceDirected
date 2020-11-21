@@ -247,7 +247,7 @@ function draw_graph() {
         .text(d => d.id+' '+d.weight+' graduates')
         .attr("display", 'none');
 
-        const drag = d3.drag()
+    const drag = d3.drag()
         .on("start", dragstart)
         .on("drag", dragged)
         .on("end",dragend);
@@ -258,6 +258,7 @@ function draw_graph() {
         delete d.fx;
         delete d.fy;
         d3.select(this).classed("fixed", false);
+        draw_and_calc();
     }
 
     function dragstart() {
@@ -276,6 +277,8 @@ function draw_graph() {
             .attr("y2", d => nodes_dict[d.target].y);
     }
     function dragend(event, d){
+        d.fx = true;
+        d.fy = true;
         draw_and_calc();
     }
 
