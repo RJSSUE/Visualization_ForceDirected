@@ -60,6 +60,9 @@ html,body {
     opacity: 80%;
     visibility: visible;
 }
+button{
+    cursor: pointer;
+}
 input[type="range"] {
     width: 100%;
     -webkit-appearance: none;
@@ -75,7 +78,6 @@ input[type="range"]::-webkit-slider-thumb {
     border-radius: 4px;
     cursor: pointer;
 }
-
 input[type="range"]::-webkit-slider-thumb:hover {
     background: #666;
 }
@@ -100,6 +102,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
     background-size: 100% 100%;
 }
 #delta_t {
-    background: linear-gradient(to right, #ffa200, white 50%, white);
+    background: linear-gradient(to right, #ffa200, white 20%, white);
     background-size: 100% 100%;
 }

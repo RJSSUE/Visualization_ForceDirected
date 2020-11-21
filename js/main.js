@@ -41,7 +41,7 @@ let constants = {
     d_Hooke: 100, // 弹簧的标准长度 现在是所有弹簧的标准长度均如此，与弹簧的强度等等无关
     mu: -0.5, // 阻力与速度的比值
     v_threshold: 0.001, // 收敛时的平均速度，越大收敛越快，但可能离完全收敛越远。
-    delta_t: 1, // 模拟的时间步的长度，调大会使模拟变快，但可能会导致不精准
+    delta_t: 0.2, // 模拟的时间步的长度，调大会使模拟变快，但可能会导致不精准
 };
 function calpercent(obj){//flag表示min是否取负数
     let Percent = (parseFloat(obj.value)-parseFloat(obj.min)) / (parseFloat(obj.max)-parseFloat(obj.min)) * 100;
@@ -110,8 +110,8 @@ function draw_and_calc() {
             .attr("cx", d => d.x)
             .attr("cy", d => d.y);
         text
-            .attr("x", d => d.x)
-            .attr("y", d => d.y);
+            .attr("x", d => d.x+5)
+            .attr("y", d => d.y-5);
 
         let [cx, cy] = calc_center(nodes);
         center
@@ -289,6 +289,10 @@ function main() {
             .style('left',_width*0.05 + 'px')
             .style('top', `${_height*0.05}` + 'px')
             .style('visibility', 'visible');
+        d3.select('#restart')
+            .on('click',()=>{
+
+            });
         data = DATA;
         draw_graph();
     })

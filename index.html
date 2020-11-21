@@ -28,10 +28,13 @@
 			<p id="v_threshold_value">v_threshold = 0.01</p>
 			<input type="range" id="v_threshold" value="0.01" min="0" max="0.1" step="0.01" onchange="changeV()">
 			[0.00,0.10]
-			<p id="delta_t_value">delta_t = 1.00</p>
-			<input type="range" id="delta_t" value="1" min="0" max="2" step="0.1" onchange="changeV()">
-			[0.00,2.00]
+			<p id="delta_t_value">delta_t = 0.20</p>
+			<input type="range" id="delta_t" value="0.20" min="0" max="1" step="0.01" onchange="changeV()">
+			[0.00,1.00]
 		</form>
+		<p>
+			<button id="restart">restart</button>
+		</p>
 	</div>
 	<div id='container'>
 		<div id='tooltip'></div>
