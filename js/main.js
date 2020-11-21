@@ -289,6 +289,11 @@ function main() {
             .select('svg')
             .attr('width', width)
             .attr('height', height);
+        svg.append('g')
+            .attr('transform', `translate(${width*0.55}, ${height*0.1})`)
+            .append('text')
+            .attr('class', 'title')
+            .text('A Force-Directed Graph for Faculties That Research on Computer Science in Well-known Universities');
         d3.select('#selector')
             .style('left',_width*0.05 + 'px')
             .style('top', `${_height*0.05}` + 'px')
