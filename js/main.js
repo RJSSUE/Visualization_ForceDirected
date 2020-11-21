@@ -203,7 +203,7 @@ function draw_graph() {
         .data(nodes)
         .join("circle")
         .attr("r", d => Math.sqrt(d.weight) + 2)
-        .attr("opacity",0.8)
+        .attr("opacity",0.6)
         .attr("fill", (d)=>{
             if (d.id in institutionColors)
                 return institutionColors[d.id]
@@ -224,7 +224,12 @@ function draw_graph() {
                 })
         })
         .on("mouseout", function (e, d) {// 鼠标移出node后按条件判断是否显示text
-            d3.select(this).attr("opacity",0.8)
+            console.log(d)
+            console.log(d3.select(this))
+            // if(d3.select(this).className=='fixed')
+            //     d3.select(this).attr("opacity",1)
+            // else
+                d3.select(this).attr("opacity",0.6)
             text
                 .attr("display",  'none')
         });
@@ -232,11 +237,10 @@ function draw_graph() {
 
     // center of mass
     center = svg.append('g')
-        .attr('stroke', '#fff')
-        .attr('stroke-width', 0.5)
+        .attr('stroke', 'none')
         .append('circle')
         .attr('r', d => 10)
-        .attr('fill', 'red');
+        .attr('fill', 'none');
 
     // 学校名称text，只显示满足条件的学校
     text = svg.append("g")
@@ -256,7 +260,9 @@ function draw_graph() {
     function click(event, d) {
         delete d.fx;
         delete d.fy;
-        d3.select(this).classed("fixed", false);
+        d3.select(this)
+            .classed("fixed", false)
+            .attr('opacity',0,6);
         draw_and_calc();
     }
 
@@ -268,7 +274,8 @@ function draw_graph() {
     function dragged(event, d) {
         d3.select(this)
             .attr("cx",d.x = event.x)
-            .attr("cy",d.y = event.y);
+            .attr("cy",d.y = event.y)
+            .attr('opacity',1);
         link
             .attr("x1", d => nodes_dict[d.source].x)
             .attr("y1", d => nodes_dict[d.source].y)
