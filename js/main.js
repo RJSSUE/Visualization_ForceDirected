@@ -134,7 +134,6 @@ function draw_and_calc(before_start = () => {}) {
         stop_drawing();
         draw(xs, ys);
     }
-    return drawer;
 }
 function stop_drawing() {
     if (current_drawer === undefined) return;
