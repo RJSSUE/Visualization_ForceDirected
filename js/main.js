@@ -157,8 +157,10 @@ function draw_graph() {
     nodes = data.nodes;
 
     nodes_dict = {};
+    nodes_index = {};
     for (i in nodes) {
         nodes_dict[nodes[i].id] = nodes[i]
+        nodes_index[nodes[i].id] = i
     }
 
     randomize_nodes();
@@ -168,6 +170,7 @@ function draw_graph() {
         .selectAll("line")
         .data(links)
         .join("line")
+        .attr('class',d=>'from_'+nodes_index[d.source]+' to_'+nodes_index[d.target])
         .attr("stroke-width", d => Math.sqrt(d.weight))
         .classed("link", true)
         .on("mouseover", function (e, d) {
@@ -268,7 +271,12 @@ function draw_graph() {
             .attr("cx",d.x = event.x)
             .attr("cy",d.y = event.y)
             .attr('opacity',1);
-        link
+        d3.selectAll('.from_'+nodes_index[d.id])
+            .attr("x1", d => nodes_dict[d.source].x)
+            .attr("y1", d => nodes_dict[d.source].y)
+            .attr("x2", d => nodes_dict[d.target].x)
+            .attr("y2", d => nodes_dict[d.target].y);
+        d3.selectAll('.to_'+nodes_index[d.id])
             .attr("x1", d => nodes_dict[d.source].x)
             .attr("y1", d => nodes_dict[d.source].y)
             .attr("x2", d => nodes_dict[d.target].x)
