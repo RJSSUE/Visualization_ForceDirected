@@ -111,9 +111,6 @@ function draw_and_calc(before_start = () => {}) {
         node
             .attr("cx", d => d.x)
             .attr("cy", d => d.y);
-        text
-            .attr("x", d => d.x+5)
-            .attr("y", d => d.y-5);
 
         let [cx, cy] = calc_center(nodes);
     }
@@ -139,7 +136,7 @@ function stop_drawing() {
     calc_positions.terminate();
 }
 
-let links,nodes,nodes_dict,svg,link,node,text;
+let links,nodes,nodes_dict,svg,link,node;
 function randomize_nodes() {
     for (let x of nodes) {
         x.x = (Math.random() * 0.6 + 0.2) * width;
@@ -244,33 +241,12 @@ function draw_graph() {
                 .style('left', `${d.x+5}` + 'px')
                 .style('top', `${d.y+5}` + 'px')
                 .style('visibility', 'visible');
-
-            // text
-            //     .attr("display", function (f) {
-            //         if (f.id == d.id) {
-            //             d3.select(this).text(d => d.id+' '+d.weight+' graduates, flow out '+_out+' faculties,<br/> self_loop '+_self+' faculties, flow in '+_in+' faculties')
-            //             return "null";
-            //         }
-            //         else {
-            //             return "none";
-            //         }
-            //     })
         })
         .on("mouseout", function (e, d) {// 鼠标移出node后按条件判断是否显示text
             d3.select(this).attr("opacity",0.6)
             link.attr("stroke","#999")
-            // text
-            //     .attr("display",  'none')
             d3.select('#tooltip').style('visibility', 'hidden');
         });
-
-    // 学校名称text，只显示满足条件的学校
-    text = svg.append("g")
-        .selectAll("text")
-        .data(nodes)
-        .join("text")
-        .text(d => d.id+' '+d.weight+' graduates')
-        .attr("display", 'none');
 
     const drag = d3.drag()
         .on("start", dragstart)
