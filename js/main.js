@@ -213,17 +213,24 @@ function draw_graph() {
         .classed("fixed", d => d.fx !== undefined)
         .on("mouseover", function (e, d) {// 鼠标移动到node上时显示text
             d3.select(this).attr("opacity",0.3)
+            var _out = 0;
+            var _in = 0;
             link.attr("stroke",(l)=>{
-                if(d.id == l.source)
+                if(d.id == l.source){
+                    _out += l.weight;
                     return '#ff7f50';
-                else if(d.id == l.target)
+                }
+                else if(d.id == l.target){
+                    _in += l.weight;
                     return '#008000'
+                }
                 else
                     return '#999';
             })
             text
                 .attr("display", function (f) {
                     if (f.id == d.id) {
+                        d3.select(this).text(d => d.id+' '+d.weight+' graduates, flow in '+_in+' faculties, flow out '+_out+' faculties')
                         return "null";
                     }
                     else {
