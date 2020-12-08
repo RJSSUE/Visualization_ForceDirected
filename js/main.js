@@ -215,8 +215,13 @@ function draw_graph() {
             d3.select(this).attr("opacity",0.3)
             var _out = 0;
             var _in = 0;
+            var _self = 0;
             link.attr("stroke",(l)=>{
-                if(d.id == l.source){
+                if(d.id == l.source && d.id == l.target){
+                    _self += l.weight;
+                    return '#999';
+                }
+                else if(d.id == l.source){
                     _out += l.weight;
                     return '#ff7f50';
                 }
@@ -227,22 +232,36 @@ function draw_graph() {
                 else
                     return '#999';
             })
-            text
-                .attr("display", function (f) {
-                    if (f.id == d.id) {
-                        d3.select(this).text(d => d.id+' '+d.weight+' graduates, flow in '+_in+' faculties, flow out '+_out+' faculties')
-                        return "null";
-                    }
-                    else {
-                        return "none";
-                    }
-                })
+            let content = '<table>'
+                + '<tr><td>Institution</td><td>' + `${d.id}` + '</td></tr>'
+                + '<tr><td>Graduated faculty number</td><td>'+ `${d.weight}` + '</td></tr>'
+                + '<tr><td>Flow out</td><td>'+ `${_out}` + '</td></tr>'
+                + '<tr><td>Self_loop</td><td>'+ `${_self}` + '</td></tr>'
+                + '<tr><td>Flow in</td><td>'+ `${_in}` + '</td></tr>'
+                + '</table>';
+
+            d3.select('#tooltip').html(content)
+                .style('left', `${d.x+5}` + 'px')
+                .style('top', `${d.y+5}` + 'px')
+                .style('visibility', 'visible');
+
+            // text
+            //     .attr("display", function (f) {
+            //         if (f.id == d.id) {
+            //             d3.select(this).text(d => d.id+' '+d.weight+' graduates, flow out '+_out+' faculties,<br/> self_loop '+_self+' faculties, flow in '+_in+' faculties')
+            //             return "null";
+            //         }
+            //         else {
+            //             return "none";
+            //         }
+            //     })
         })
         .on("mouseout", function (e, d) {// 鼠标移出node后按条件判断是否显示text
             d3.select(this).attr("opacity",0.6)
             link.attr("stroke","#999")
-            text
-                .attr("display",  'none')
+            // text
+            //     .attr("display",  'none')
+            d3.select('#tooltip').style('visibility', 'hidden');
         });
 
     // 学校名称text，只显示满足条件的学校
